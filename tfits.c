@@ -103,7 +103,7 @@ double *read_pixels(fitsfile *fptr, long naxes[], int *status)
 void compress_image(double *dst, double *src, long naxes[])
 {
 
-	double _xscale=(double)ow/naxes[0];
+	double _xscale=0.5*(double)ow/naxes[0];
 	double _yscale=(double)oh/naxes[1];
 	double scale= (_xscale<_yscale) ? _xscale:_yscale;
 	memset(dst, 0, sizeof(double)*outsize);
@@ -112,8 +112,8 @@ void compress_image(double *dst, double *src, long naxes[])
 	{
 		for(int y=0;y<naxes[1];y++)
 		{
-			int ox=(int)(scale*x);
-			int oy=(int)(scale*y);
+			int ox=(int)(2*scale*x);
+			int oy=(int)(scale*(naxes[1]-y));
 
 			dst[ox + oy*ow]+=src[x+y*naxes[0]];
 		}
