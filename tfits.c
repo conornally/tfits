@@ -141,65 +141,11 @@ void display_image(double *image)
 	}
 }
 
-int main(int argc, char *argv[])
+int run(char *fname)
 {
-	int c, status=0;
+	int status=0;
 	fitsfile *fptr=NULL, *ofptr=NULL;
-
-	if(argc==1) 
-	{
-		options|=VERBOSE;
-		usage();
-	}
-	while((c=getopt(argc, argv, "eHhirSvVxa:n:p:s:"))!=EOF)
-	{
-		switch(c)
-		{
-			case 'e': options|=(SHOWEXT|DONTSTOP); 
-					  options&= ~(SHOWIMG|SHOWTAB); 
-					  break;
-			case 'H': options|=(SHOWHDR);
-					  options&= ~(SHOWIMG|SHOWTAB); 
-					  break;
-			case 'h': usage(); break;
-			case 'i': options|=INVERT; break;
-			case 'r': options|=ROTATE; fprintf(stderr,"Rotate no currently implemented\n");break;
-			case 'v': options|=VERBOSE; break;
-			case 'V': printf("tfits v%s\n",version); usage(); break;
-			case 'x': options|=DONTSTOP; break;
-
-			case 'a': ascii_chars=strdup(optarg); break;
-			case 'n': nHDU=atoi(optarg); break;
-			case 'o': strncpy(ofname,optarg,PATH_MAX); break;
-			case 'p': pwr=atof(optarg); break;
-			case 'S': options|=(SPLITEXT|DONTSTOP);
-					  options&= ~(SHOWIMG|SHOWTAB); 
-					  break;
-			case 's':
-					  if(!strcmp("log", optarg)) stretch_fn=log;
-					  else if(!strcmp("sin", optarg)) stretch_fn=sin;
-					  else if(!strcmp("asin", optarg))stretch_fn=asin;
-					  else if(!strcmp("sinh", optarg)) stretch_fn=sinh;
-					  else if(!strcmp("asinh", optarg)) stretch_fn=asinh;
-					  else fprintf(stderr, "Unknown stretch function: %s\n", optarg);
-					  break;
-		}
-	}
-	argc-=optind;
-	argv+=optind;
-
-	if(argc!=1)
-	{
-		fprintf(stderr, "No FITS file specified\n");
-		usage();
-	}
-
-	ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws);
-	ow=ws.ws_col-2;
-	oh=ws.ws_row-3;
-	outsize=oh*ow;
-
-	if(!fits_open_file(&fptr,argv[0], READONLY, &status))
+	if(!fits_open_file(&fptr,fname, READONLY, &status))
 	{
 		int n_hdus=0, hdu_min=1, hdu_max=1, type=-1;
 		int nkeys=0;
@@ -268,7 +214,7 @@ int main(int argc, char *argv[])
 					//if(!ofname[0])
 					{
 						char extension[16]="\0";
-						strncpy(ofname,argv[0], strlen(argv[0])-5);
+						strncpy(ofname,fname, strlen(fname)-5);
 						snprintf(extension,16,"-%d.fits",n);
 						strcat(ofname,extension);
 						printf("split extension -> %s\n",ofname);
@@ -300,7 +246,7 @@ int main(int argc, char *argv[])
 							free(pixels);
 						}
 						nputchar('-',ow);
-						fprintf(stdout, "\r|%s EXT[%d] %s",argv[0],n, extname);
+						fprintf(stdout, "\r|%s EXT[%d] %s",fname,n, extname);
 						display_image(im_outputs[n-1]);
 						printf("|\n|");
 						nputchar('-',ow);
@@ -372,6 +318,72 @@ int main(int argc, char *argv[])
 		fits_close_file(fptr, &status);
 	}
 	else fits_report_error(stderr, status);
+	return status;
+}
+
+int main(int argc, char *argv[])
+{
+	int c, status=0;
+
+	if(argc==1) 
+	{
+		options|=VERBOSE;
+		usage();
+	}
+	while((c=getopt(argc, argv, "eHhirSvVxa:n:p:s:"))!=EOF)
+	{
+		switch(c)
+		{
+			case 'e': options|=(SHOWEXT|DONTSTOP); 
+					  options&= ~(SHOWIMG|SHOWTAB); 
+					  break;
+			case 'H': options|=(SHOWHDR);
+					  options&= ~(SHOWIMG|SHOWTAB); 
+					  break;
+			case 'h': usage(); break;
+			case 'i': options|=INVERT; break;
+			case 'r': options|=ROTATE; fprintf(stderr,"Rotate no currently implemented\n");break;
+			case 'v': options|=VERBOSE; break;
+			case 'V': printf("tfits v%s\n",version); usage(); break;
+			case 'x': options|=DONTSTOP; break;
+
+			case 'a': ascii_chars=strdup(optarg); break;
+			case 'n': nHDU=atoi(optarg); break;
+			case 'o': strncpy(ofname,optarg,PATH_MAX); break;
+			case 'p': pwr=atof(optarg); break;
+			case 'S': options|=(SPLITEXT|DONTSTOP);
+					  options&= ~(SHOWIMG|SHOWTAB); 
+					  break;
+			case 's':
+					  if(!strcmp("log", optarg)) stretch_fn=log;
+					  else if(!strcmp("sin", optarg)) stretch_fn=sin;
+					  else if(!strcmp("asin", optarg))stretch_fn=asin;
+					  else if(!strcmp("sinh", optarg)) stretch_fn=sinh;
+					  else if(!strcmp("asinh", optarg)) stretch_fn=asinh;
+					  else fprintf(stderr, "Unknown stretch function: %s\n", optarg);
+					  break;
+		}
+	}
+	argc-=optind;
+	argv+=optind;
+
+	if(!argc)
+	{
+		fprintf(stderr, "No FITS file specified\n");
+		usage();
+	}
+
+	// Set window size values
+	ioctl(STDOUT_FILENO,TIOCGWINSZ,&ws);
+	ow=ws.ws_col-2;
+	oh=ws.ws_row-3;
+	outsize=oh*ow;
+	printf("%d %d\n",ow,oh);
+
+	for(int i=0; i<argc; i++)
+	{
+		run(argv[i]);
+	}
 
 	return 0;
 }

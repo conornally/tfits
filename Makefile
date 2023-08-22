@@ -15,3 +15,6 @@ uninstall:
 
 clean:
 	@rm tfits
+
+debug: CCFLAGS+=-g
+debug:all

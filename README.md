@@ -1,6 +1,6 @@
 # tfits
 
-Version=1.1.1
+Version=1.1.2
 
 Fits image displayed in the terminal..in ASCII. Because what better way to view those beautiful high resolution images from Hubble or JWST than in ascii.
 
